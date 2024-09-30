@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../service/userService.dart';
 import '../service/workService.dart';
 import '../wigget/avartar_wigget.dart';
+import '../wigget/list_wigget.dart';
 import 'edit_page.dart';
 import 'login_page.dart';
 
@@ -14,6 +15,7 @@ class TodoPage extends StatefulWidget {
   @override
   State<TodoPage> createState() => _TodoPageState();
 }
+enum TaskFilter { all, completed, notCompleted, overdue }
 
 class _TodoPageState extends State<TodoPage> {
   final IconData defaultIcon = Icons.work;
@@ -21,8 +23,8 @@ class _TodoPageState extends State<TodoPage> {
   int? userId;
   List<Map<String, dynamic>> tasks = [];
 
-
-
+  final GlobalKey<ListTaskWidgetState> taskKey = GlobalKey<ListTaskWidgetState>();
+  TaskFilter _currentFilter = TaskFilter.all;
   @override
   void initState() {
     super.initState();
@@ -59,45 +61,43 @@ class _TodoPageState extends State<TodoPage> {
     );
   }
 
-
-  void _editTask(int index) async {
-    final taskToEdit = tasks[index];
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: EditForm(
-            task: taskToEdit,
-            onSave: (updatedTask) {
-              setState(() {
-                tasks[index] = updatedTask;
-              });
-            },
-          ),
-        );
-      },
-    );
-  }
-
-
-  void _deleteTask(int index) async {
-    int idToDelete = tasks[index]['id'];
-
-    bool isDeleted = await DeleteId(idToDelete);
-
-    if (isDeleted) {
-      setState(() {
-        tasks.removeAt(index);
-      });
-      print("Task deleted successfully");
-    } else {
-      print("Task deletion failed");
-    }
-  }
+  // void _editTask(int index) async {
+  //   final taskToEdit = tasks[index];
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     builder: (context) {
+  //       return Padding(
+  //         padding: EdgeInsets.only(
+  //           bottom: MediaQuery.of(context).viewInsets.bottom,
+  //         ),
+  //         child: EditForm(
+  //           task: taskToEdit,
+  //           onSave: (updatedTask) {
+  //             setState(() {
+  //               tasks[index] = updatedTask;
+  //             });
+  //           },
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+  //
+  // void _deleteTask(int index) async {
+  //   int idToDelete = tasks[index]['id'];
+  //
+  //   bool isDeleted = await DeleteId(idToDelete);
+  //
+  //   if (isDeleted) {
+  //     setState(() {
+  //       tasks.removeAt(index);
+  //     });
+  //     print("Task deleted successfully");
+  //   } else {
+  //     print("Task deletion failed");
+  //   }
+  // }
 
   Future<void> _checkUserId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -143,8 +143,19 @@ class _TodoPageState extends State<TodoPage> {
     );
   }
 
+  List<Map<String, dynamic>> _filterTasks() {
+    DateTime now = DateTime.now();
 
-
+    if (_currentFilter == TaskFilter.completed) {
+      return tasks.where((task) => task['isDone'] == 1).toList();
+    } else if (_currentFilter == TaskFilter.overdue) {
+      return tasks.where((task) => task['isDone'] == 0 && DateTime.parse(task['deadline']).isBefore(now)).toList();
+    } else if (_currentFilter == TaskFilter.notCompleted) {
+      return tasks.where((task) => task['isDone'] == 0 && DateTime.parse(task['deadline']).isAfter(now)).toList();
+    } else {
+      return tasks;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -189,12 +200,14 @@ class _TodoPageState extends State<TodoPage> {
                         email: "thai",
                       ),
                     ),
-
                     ListTile(
-                      leading: Icon(Icons.home, color: Colors.blueAccent),
-                      title: Text('Completed'),
+                      leading: Icon(Icons.home, color: Colors.blue),
+                      title: Text('Home'),
                       onTap: () {
-
+                        setState(() {
+                          _currentFilter = TaskFilter.all;  // Cập nhật bộ lọc
+                        });
+                        Navigator.pop(context);  // Đóng menu
                       },
                     ),
 
@@ -202,21 +215,30 @@ class _TodoPageState extends State<TodoPage> {
                       leading: Icon(Icons.check_circle, color: Colors.green),
                       title: Text('Completed'),
                       onTap: () {
-
+                        setState(() {
+                          _currentFilter = TaskFilter.completed;  // Cập nhật bộ lọc
+                        });
+                        Navigator.pop(context);  // Đóng menu
                       },
                     ),
                     ListTile(
-                      leading: Icon(Icons.pending,  color: Colors.amber,),
+                      leading: Icon(Icons.pending, color: Colors.amber),
                       title: Text('Not Completed'),
                       onTap: () {
-
+                        setState(() {
+                          _currentFilter = TaskFilter.notCompleted;  // Cập nhật bộ lọc
+                        });
+                        Navigator.pop(context);
                       },
                     ),
                     ListTile(
                       leading: Icon(Icons.warning, color: Colors.red),
                       title: Text('Over Due'),
                       onTap: () {
-
+                        setState(() {
+                          _currentFilter = TaskFilter.overdue;  // Cập nhật bộ lọc
+                        });
+                        Navigator.pop(context);
                       },
                     ),
                   ],
@@ -231,29 +253,9 @@ class _TodoPageState extends State<TodoPage> {
             ],
           ),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ListView.builder(
-            itemCount: tasks.length,
-            itemBuilder: (context, index) {
-              DateTime deadline;
-              int taskId = tasks[index]['id'] ?? 0;
-              deadline = DateTime.parse(tasks[index]['deadline']);
-
-              print('Task I---------------------------------------------------------D: $taskId');
-              return TaskitemWidget(
-                key: ValueKey(tasks[index]['id']),
-                iconData: defaultIcon,
-                title: tasks[index]['title'],
-                date: tasks[index]['deadline'],
-                isDone: (tasks[index]['isDone'] as int?) == 1,
-                trackingicon: trackingIcon,
-                deadline: deadline,
-                onEdit: () => _editTask(index),
-                onDelete: () => _deleteTask(index),
-              );
-            },
-          ),
+        body: ListTaskWidget(
+          key: taskKey,
+          tasks: _filterTasks(),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: _addNewTask,
