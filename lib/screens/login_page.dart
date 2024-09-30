@@ -177,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-            if (isLoading) // Hiển thị CircularProgressIndicator khi isLoading là true
+            if (isLoading)
               Container(
                 color: Colors.white.withOpacity(0.4),
                 child: Center(

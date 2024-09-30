@@ -2,10 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/screens/wellcome_page.dart';
 
 import 'database/database.dart';
+import 'models/workTodo.dart';
 
 void main() async {
   runApp(const MyApp());
   WidgetsFlutterBinding.ensureInitialized();
+
+  // List<WorkTodo> tasks = [
+  //   WorkTodo(id: 0, title: 'thai', description: '123', deadline: DateTime.parse('2024-09-30T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  //   WorkTodo(id: 0, title: '123', description: '123', deadline: DateTime.parse('2024-09-30T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  //   WorkTodo(id: 0, title: 'thai', description: '123', deadline: DateTime.parse('2024-09-30T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  //   WorkTodo(id: 0, title: 'thaiiii', description: '12`12', deadline: DateTime.parse('2024-09-30T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  //   WorkTodo(id: 0, title: 'llllllll', description: 'lllll', deadline: DateTime.parse('2024-09-30T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  //   WorkTodo(id: 0, title: 'jjjjjjj', description: '1111111', deadline: DateTime.parse('2024-09-30T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  //   WorkTodo(id: 0, title: 'ooooooooo', description: '00000', deadline: DateTime.parse('2024-09-30T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  //   WorkTodo(id: 0, title: 'pppppp', description: 'ppppp', deadline: DateTime.parse('2024-09-21T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  //   WorkTodo(id: 0, title: 'pppppp', description: 'ppppp', deadline: DateTime.parse('2024-09-21T00:00:00.000'), isDone: false, createdAt: DateTime.now(), userId: 1),
+  // ];
+  //
+  // tasks.forEach((task) => print(task.toMap()));
+  // tasks.removeWhere((WorkTodo task) => !task.isDone);
+
 
   final database = DB.instance;
   // // await database.deleteDatabase();

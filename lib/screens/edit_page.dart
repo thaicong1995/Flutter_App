@@ -1,77 +1,72 @@
 import 'package:flutter/material.dart';
-import '../models/workTodo.dart';
-import '../database/database.dart';
-import '../service/userService.dart';
-import '../service/workService.dart';
+import 'package:flutter_application/models/workTodo.dart';
+import 'package:flutter_application/service/workService.dart';
 
-class CreateForm extends StatefulWidget {
+class EditForm extends StatefulWidget {
+  final Map<String, dynamic> task;
   final Function(Map<String, dynamic>) onSave;
-  List<WorkTodo> tasks = [];
-  CreateForm({required this.onSave});
+
+  const EditForm({Key? key, required this.task, required this.onSave}) : super(key: key);
 
   @override
-  _CreateFormState createState() => _CreateFormState();
+  _EditFormState createState() => _EditFormState();
 }
 
-class _CreateFormState extends State<CreateForm> {
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  String _selectedDate = "";
+class _EditFormState extends State<EditForm> {
+  late TextEditingController _titleController;
+  late TextEditingController _descriptionController;
+  String _selectedDate = '';
+  bool _isDone = false;
 
-  get tasks => null;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.task['title']);
+    _descriptionController = TextEditingController(text: widget.task['description']);
+
+    // Chuyển đổi deadline từ chuỗi sang DateTime
+    if (widget.task['deadline'] != null) {
+      DateTime deadline = DateTime.parse(widget.task['deadline']);
+      _selectedDate = deadline.toIso8601String().split('T').first;
+    }
+
+    // Chuyển đổi giá trị isDone từ int sang bool
+    _isDone = (widget.task['isDone'] ?? 0) == 1;
+  }
+
+
 
   Future<void> _saveTask() async {
-    if (_titleController.text.isNotEmpty &&
-        _descriptionController.text.isNotEmpty &&
-        _selectedDate.isNotEmpty) {
+    try {
+      DateTime parsedDeadline = DateTime.parse(_selectedDate);
 
-      DateTime deadline = DateTime.parse(_selectedDate);
-
-      WorkTodo newTask = WorkTodo(
+      WorkTodo updatedTask = WorkTodo(
+        id: widget.task['id'],
         title: _titleController.text,
         description: _descriptionController.text,
-        deadline: deadline,
-        isDone: false,
+        deadline: parsedDeadline,
+        isDone: _isDone,
         createdAt: DateTime.now(),
-        userId: (await getUserId())!,
+        userId: widget.task['userId'],
       );
 
 
-      var result = await Insert(newTask);
-      newTask.id = result;
-      print("------------RS--------${result}");
-      print("------------RS--------${newTask.userId}");
-      if (result != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Thêm công việc thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        widget.onSave(newTask.toMap());
-        print("--------------------${newTask.toMap()}");
+      int result = await Update(updatedTask);
+
+      if (result > 0) {
+        widget.onSave(updatedTask.toMap());
         Navigator.pop(context);
+      } else {
+        print('Fail');
       }
+    } catch (e) {
+      print('E: $e');
     }
   }
 
 
-  InputDecoration _inputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: Colors.black),
-      fillColor: Colors.white,
-      filled: true,
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8.0),
-        borderSide: BorderSide(color: Colors.black),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8.0),
-        borderSide: BorderSide(color: Colors.blue, width: 2),
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -83,14 +78,13 @@ class _CreateFormState extends State<CreateForm> {
         children: [
           TextField(
             controller: _titleController,
-            decoration: _inputDecoration('Title'),
-            obscureText: false,
+            decoration: InputDecoration(labelText: 'Title'),
           ),
           SizedBox(height: 16),
           TextField(
             controller: _descriptionController,
-            decoration: _inputDecoration('Description'),
-            obscureText: false,
+            decoration: InputDecoration(labelText: 'Description'),
+            maxLines: 3,
           ),
           SizedBox(height: 16),
           Row(
@@ -106,7 +100,7 @@ class _CreateFormState extends State<CreateForm> {
                   );
                   if (pickedDate != null) {
                     setState(() {
-                      _selectedDate = pickedDate.toIso8601String().split('T').first; ;
+                      _selectedDate = pickedDate.toIso8601String().split('T').first;
                     });
                   }
                 },
@@ -134,6 +128,21 @@ class _CreateFormState extends State<CreateForm> {
                   style: TextStyle(color: Colors.blue),
                 ),
               ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Checkbox(
+                value: _isDone,
+                onChanged: (value) {
+                  setState(() {
+                    _isDone = value!;
+                  });
+                },
+              ),
+              Text('Task is done'),
             ],
           ),
         ],

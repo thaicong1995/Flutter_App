@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
-class TaskitemWigget extends StatelessWidget {
+class TaskitemWidget extends StatefulWidget {
   final IconData iconData;
   final String title;
-  final String date;
+  final String date; // Ngày hoàn thành
   final IconData trackingicon;
-  final Function() onEdit; // Callback cho chỉnh sửa
-  final Function() onDelete; // Callback cho xóa
+  final Function() onEdit;
+  final Function() onDelete;
+  final bool isDone;
+  final DateTime deadline;
 
-  const TaskitemWigget({
+  const TaskitemWidget({
     required Key key,
     required this.iconData,
     required this.title,
@@ -16,16 +18,37 @@ class TaskitemWigget extends StatelessWidget {
     required this.trackingicon,
     required this.onEdit,
     required this.onDelete,
+    required this.isDone,
+    required this.deadline,
   }) : super(key: key);
 
   @override
+  State<TaskitemWidget> createState() => _TaskitemWidgetState();
+}
+
+class _TaskitemWidgetState extends State<TaskitemWidget> {
+
+
+
+  @override
   Widget build(BuildContext context) {
+
+    Color borderColor;
+    if (widget.isDone) {
+      borderColor = Colors.green;
+    } else if (widget.deadline.isBefore(DateTime.now())) {
+      borderColor = Colors.red;
+    } else {
+      borderColor = Colors.transparent;
+    }
+
     return Container(
       margin: EdgeInsets.only(bottom: 10),
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.5),
@@ -40,18 +63,18 @@ class TaskitemWigget extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(iconData, color: Colors.blue, size: 28),
+              Icon(widget.iconData, color: Colors.blue, size: 28),
               SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    widget.title,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 4),
                   Text(
-                    date,
+                    widget.date,
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ],
@@ -59,7 +82,7 @@ class TaskitemWigget extends StatelessWidget {
             ],
           ),
           IconButton(
-            icon: Icon(trackingicon, color: Colors.blue),
+            icon: Icon(widget.trackingicon, color: Colors.blue),
             onPressed: () => _showOptions(context),
           ),
         ],
@@ -81,7 +104,7 @@ class TaskitemWigget extends StatelessWidget {
                 title: Text('Done'),
                 onTap: () {
                   Navigator.pop(context);
-                  onDelete(); // Gọi callback xóa
+                  widget.onEdit();
                 },
               ),
               ListTile(
@@ -89,7 +112,7 @@ class TaskitemWigget extends StatelessWidget {
                 title: Text('Edit'),
                 onTap: () {
                   Navigator.pop(context);
-                  onEdit(); // Gọi callback chỉnh sửa
+                  widget.onEdit();
                 },
               ),
               ListTile(
@@ -97,7 +120,7 @@ class TaskitemWigget extends StatelessWidget {
                 title: Text('Delete'),
                 onTap: () {
                   Navigator.pop(context);
-                  onDelete(); // Gọi callback xóa
+                  widget.onDelete();
                 },
               ),
             ],

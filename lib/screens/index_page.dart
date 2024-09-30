@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/models/workTodo.dart';
 import 'package:flutter_application/screens/create_form.dart';
 import 'package:flutter_application/wigget/taskitem_wigget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../service/userService.dart';
 import '../service/workService.dart';
 import '../wigget/avartar_wigget.dart';
+import 'edit_page.dart';
 import 'login_page.dart';
 
 class TodoPage extends StatefulWidget {
@@ -47,12 +48,10 @@ class _TodoPageState extends State<TodoPage> {
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: CreateForm(
-            onSave: (newTask)  async {
-              var insertedTask = await Insert(newTask as WorkTodo);
+            onSave: (newTask) async {
               setState(() {
-                tasks.add(insertedTask as Map<String, dynamic>);
+                tasks.add(newTask);
               });
-              Navigator.pop(context);
             },
           ),
         );
@@ -61,9 +60,29 @@ class _TodoPageState extends State<TodoPage> {
   }
 
 
-  void _editTask(int id) async{
-    // await Delete(id);
+  void _editTask(int index) async {
+    final taskToEdit = tasks[index];
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: EditForm(
+            task: taskToEdit,
+            onSave: (updatedTask) {
+              setState(() {
+                tasks[index] = updatedTask;
+              });
+            },
+          ),
+        );
+      },
+    );
   }
+
 
   void _deleteTask(int index) async {
     int idToDelete = tasks[index]['id'];
@@ -94,6 +113,39 @@ class _TodoPageState extends State<TodoPage> {
       );
     }
   }
+
+  void _logout() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Logout Confirmation'),
+          content: Text('Are you sure you want to log out?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await logoutUser();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+              },
+              child: Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
+
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
@@ -137,25 +189,34 @@ class _TodoPageState extends State<TodoPage> {
                         email: "thai",
                       ),
                     ),
+
                     ListTile(
-                      leading: Icon(Icons.check_circle),
+                      leading: Icon(Icons.home, color: Colors.blueAccent),
                       title: Text('Completed'),
                       onTap: () {
-                        // Thực hiện hành động khi nhấn vào "Completed"
+
+                      },
+                    ),
+
+                    ListTile(
+                      leading: Icon(Icons.check_circle, color: Colors.green),
+                      title: Text('Completed'),
+                      onTap: () {
+
                       },
                     ),
                     ListTile(
-                      leading: Icon(Icons.pending),
+                      leading: Icon(Icons.pending,  color: Colors.amber,),
                       title: Text('Not Completed'),
                       onTap: () {
-                        // Thực hiện hành động khi nhấn vào "Not Completed"
+
                       },
                     ),
                     ListTile(
-                      leading: Icon(Icons.warning),
+                      leading: Icon(Icons.warning, color: Colors.red),
                       title: Text('Over Due'),
                       onTap: () {
-                        // Thực hiện hành động khi nhấn vào "Over Due"
+
                       },
                     ),
                   ],
@@ -165,9 +226,7 @@ class _TodoPageState extends State<TodoPage> {
               ListTile(
                 leading: Icon(Icons.logout),
                 title: Text('Logout'),
-                onTap: () {
-                  // Thực hiện hành động khi nhấn vào "Logout"
-                },
+                onTap: _logout,
               ),
             ],
           ),
@@ -177,20 +236,27 @@ class _TodoPageState extends State<TodoPage> {
           child: ListView.builder(
             itemCount: tasks.length,
             itemBuilder: (context, index) {
-              return TaskitemWigget(
+              DateTime deadline;
+              int taskId = tasks[index]['id'] ?? 0;
+              deadline = DateTime.parse(tasks[index]['deadline']);
+
+              print('Task I---------------------------------------------------------D: $taskId');
+              return TaskitemWidget(
                 key: ValueKey(tasks[index]['id']),
                 iconData: defaultIcon,
                 title: tasks[index]['title'],
                 date: tasks[index]['deadline'],
+                isDone: (tasks[index]['isDone'] as int?) == 1,
                 trackingicon: trackingIcon,
-                onEdit: () => _editTask(index), // Truyền callback chỉnh sửa
-                onDelete: () => _deleteTask(index), // Truyền callback xóa
+                deadline: deadline,
+                onEdit: () => _editTask(index),
+                onDelete: () => _deleteTask(index),
               );
             },
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _addNewTask, // Gọi hàm thêm mới khi nhấn nút
+          onPressed: _addNewTask,
           child: Icon(Icons.add),
           tooltip: 'Thêm công việc mới',
         ),

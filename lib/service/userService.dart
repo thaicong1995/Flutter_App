@@ -22,3 +22,8 @@ Future<int?> getUserId() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   return prefs.getInt('userId');
 }
+
+Future<void> logoutUser() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+}
